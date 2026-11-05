@@ -1,0 +1,21 @@
+#incluide <stdio.h>
+#incluide <string.h>
+
+#define TAM 26
+
+//Estrutura para armazenar os dados dos estados
+typedef struct {
+    char nome[50];
+    long long veiculos;
+    long long acidentes;
+} Estado;
+
+// (a) Procedimento para cadastrar os estados
+void cadastrar(Estado cadastro[]) {
+    int i;
+
+    for (i = 0; i < TAM; i++) {
+        printf("|nEstado %d\n", i + 1);
+        scanf(" 49[^\n]", cadasro[i].nome);
+
+        
