@@ -1,0 +1,235 @@
+#include <stdio.h>
+#include <string.h>
+
+#define TAM_PRODUTOS 40
+
+struct Produto {
+    int codigo;
+    char descricao[50];
+    double valor;   // valor unitario
+    int estoque;    // quantidade em estoque
+};
+
+/* Auxiliar: retorna a posicao do produto com o codigo informado, ou -1 */
+int buscaProduto(struct Produto v[], int qtd, int codigo) {
+    for (int i = 0; i < qtd; i++) {
+        if (v[i].codigo == codigo) return i;
+    }
+    return -1;
+}
+
+/* (a) Procedimento para cadastrar um novo produto */
+void cadastrarProduto(struct Produto v[], int *qtd) {
+    struct Produto p;
+
+    if (*qtd >= TAM_PRODUTOS) {
+        printf("Erro: cadastro cheio (maximo de %d produtos).\n", TAM_PRODUTOS);
+        return;
+    }
+
+    printf("Codigo: ");
+    scanf("%d", &p.codigo);
+    printf("Descricao: ");
+    scanf(" %49[^\n]", p.descricao);
+    printf("Valor unitario: ");
+    scanf("%lf", &p.valor);
+    printf("Quantidade em estoque: ");
+    scanf("%d", &p.estoque);
+
+    if (buscaProduto(v, *qtd, p.codigo) != -1) {
+        printf("Erro: ja existe um produto com esse codigo.\n");
+        return;
+    }
+    if (p.valor < 0 || p.estoque < 0) {
+        printf("Erro: valor e estoque nao podem ser negativos.\n");
+        return;
+    }
+
+    v[*qtd] = p;
+    (*qtd)++;
+    printf("Produto cadastrado com sucesso.\n");
+}
+
+/* (b) Procedimento que, dado um codigo, altera o valor unitario */
+void alterarValor(struct Produto v[], int qtd, int codigo) {
+    int pos = buscaProduto(v, qtd, codigo);
+    if (pos == -1) {
+        printf("Produto nao encontrado.\n");
+        return;
+    }
+
+    double novo;
+    printf("Valor atual: R$ %.2f\n", v[pos].valor);
+    printf("Novo valor unitario: ");
+    scanf("%lf", &novo);
+    if (novo < 0) {
+        printf("Erro: o valor nao pode ser negativo.\n");
+        return;
+    }
+    v[pos].valor = novo;
+    printf("Valor alterado com sucesso.\n");
+}
+
+/* (c) Funcao que, dado um codigo, informa o valor unitario (-1 se nao existir) */
+double consultarValor(struct Produto v[], int qtd, int codigo) {
+    int pos = buscaProduto(v, qtd, codigo);
+    if (pos == -1) return -1;
+    return v[pos].valor;
+}
+
+/* (d) Funcao que, dado um codigo, informa a quantidade em estoque (-1 se nao existir) */
+int consultarEstoque(struct Produto v[], int qtd, int codigo) {
+    int pos = buscaProduto(v, qtd, codigo);
+    if (pos == -1) return -1;
+    return v[pos].estoque;
+}
+
+/* (e) Procedimento de venda */
+void vender(struct Produto v[], int qtd, int codigo, int quantidade) {
+    int pos = buscaProduto(v, qtd, codigo);
+    if (pos == -1) {
+        printf("Produto nao encontrado.\n");
+        return;
+    }
+    if (v[pos].estoque == 0) {          // OBS1: estoque zero
+        printf("Produto sem estoque.\n");
+        return;
+    }
+    if (quantidade <= 0) {
+        printf("Quantidade invalida.\n");
+        return;
+    }
+
+    if (quantidade <= v[pos].estoque) { // quantidade existe no estoque
+        v[pos].estoque -= quantidade;
+        printf("Venda realizada. Valor a pagar: R$ %.2f\n", quantidade * v[pos].valor);
+    } else {                            // OBS2: quantidade desejada maior que a existente
+        char resp;
+        printf("Ha apenas %d unidade(s) em estoque. Deseja comprar todas? (S/N): ",
+               v[pos].estoque);
+        scanf(" %c", &resp);
+        if (resp == 'S' || resp == 's') {
+            double total = v[pos].estoque * v[pos].valor;
+            v[pos].estoque = 0;
+            printf("Compra efetivada. Valor a pagar: R$ %.2f\n", total);
+        } else {
+            printf("Compra cancelada.\n");
+        }
+    }
+}
+
+/* (f) Procedimento que, dado um codigo, atualiza a quantidade em estoque */
+void atualizarEstoque(struct Produto v[], int qtd, int codigo) {
+    int pos = buscaProduto(v, qtd, codigo);
+    if (pos == -1) {
+        printf("Produto nao encontrado.\n");
+        return;
+    }
+
+    int nova;
+    printf("Estoque atual: %d\n", v[pos].estoque);
+    printf("Nova quantidade em estoque: ");
+    scanf("%d", &nova);
+    if (nova < 0) {
+        printf("Erro: a quantidade nao pode ser negativa.\n");
+        return;
+    }
+    v[pos].estoque = nova;
+    printf("Estoque atualizado com sucesso.\n");
+}
+
+/* (g) Procedimento que exibe codigo e descricao de todos os produtos */
+void exibirProdutos(struct Produto v[], int qtd) {
+    if (qtd == 0) {
+        printf("Nenhum produto cadastrado.\n");
+        return;
+    }
+    for (int i = 0; i < qtd; i++) {
+        printf("Codigo: %d | Descricao: %s\n", v[i].codigo, v[i].descricao);
+    }
+}
+
+/* (h) Procedimento que exibe codigo e descricao dos produtos com estoque zero */
+void exibirSemEstoque(struct Produto v[], int qtd) {
+    int achou = 0;
+    for (int i = 0; i < qtd; i++) {
+        if (v[i].estoque == 0) {
+            printf("Codigo: %d | Descricao: %s\n", v[i].codigo, v[i].descricao);
+            achou = 1;
+        }
+    }
+    if (!achou) printf("Nenhum produto com estoque zero.\n");
+}
+
+int main() {
+    struct Produto produtos[TAM_PRODUTOS];
+    int qtd = 0;
+    int opcao, codigo, quantidade;
+
+    do {
+        printf("\n===== PAPELARIA ESCOLAR =====\n");
+        printf("1 - Cadastrar produto\n");
+        printf("2 - Alterar valor unitario\n");
+        printf("3 - Consultar valor unitario\n");
+        printf("4 - Consultar estoque\n");
+        printf("5 - Vender\n");
+        printf("6 - Atualizar estoque\n");
+        printf("7 - Exibir todos os produtos\n");
+        printf("8 - Exibir produtos com estoque zero\n");
+        printf("0 - Sair\n");
+        printf("Opcao: ");
+        if (scanf("%d", &opcao) != 1) break;
+
+        switch (opcao) {
+            case 1:
+                cadastrarProduto(produtos, &qtd);
+                break;
+            case 2:
+                printf("Codigo: ");
+                scanf("%d", &codigo);
+                alterarValor(produtos, qtd, codigo);
+                break;
+            case 3: {
+                printf("Codigo: ");
+                scanf("%d", &codigo);
+                double valor = consultarValor(produtos, qtd, codigo);
+                if (valor < 0) printf("Produto nao encontrado.\n");
+                else printf("Valor unitario: R$ %.2f\n", valor);
+                break;
+            }
+            case 4: {
+                printf("Codigo: ");
+                scanf("%d", &codigo);
+                int est = consultarEstoque(produtos, qtd, codigo);
+                if (est < 0) printf("Produto nao encontrado.\n");
+                else printf("Quantidade em estoque: %d\n", est);
+                break;
+            }
+            case 5:
+                printf("Codigo: ");
+                scanf("%d", &codigo);
+                printf("Quantidade desejada: ");
+                scanf("%d", &quantidade);
+                vender(produtos, qtd, codigo, quantidade);
+                break;
+            case 6:
+                printf("Codigo: ");
+                scanf("%d", &codigo);
+                atualizarEstoque(produtos, qtd, codigo);
+                break;
+            case 7:
+                exibirProdutos(produtos, qtd);
+                break;
+            case 8:
+                exibirSemEstoque(produtos, qtd);
+                break;
+            case 0:
+                printf("Encerrando...\n");
+                break;
+            default:
+                printf("Opcao invalida.\n");
+        }
+    } while (opcao != 0);
+
+    return 0;
+}
